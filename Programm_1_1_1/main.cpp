@@ -95,6 +95,18 @@ public:
         }
     };
 
+//    void fin_matrix() const {
+//        ofstream name_file;
+//        name_file.open("test");
+//        for (int i = 0; i < n; i++) {
+//            for (int j = 0; j < n; j++) {
+//                name_file << A[i][j];
+//            }
+//            name_file << endl;
+////            cout << '\n';
+//        }
+//    };
+
 //    matrix (const matrix& orig) {
 //        this->numerator = orig.numerator;
 //
@@ -120,6 +132,12 @@ public:
                 S[i][j] = A[i][j] + m2.A[i][j];
             }
         }
+//        matrix mS (n, S);
+//        for (int i = 0; i < n; i++) {
+//            delete[] S[i];
+//        }
+//        delete[] S;
+//        return mS;
         return matrix(n, S);
     }
 
@@ -135,6 +153,12 @@ public:
                 S[i][j] = A[i][j] - m2.get_count(i, j);
             }
         }
+//        matrix mS (n, S);
+//        for (int i = 0; i < n; i++) {
+//            delete[] S[i];
+//        }
+//        delete[] S;
+//        return mS;
         return matrix(n, S);
     }
 
@@ -153,9 +177,60 @@ public:
                 }
             }
         }
-        return matrix(n, S);;
+//        matrix mS (n, S);
+//        for (int i = 0; i < n; i++) {
+//            delete[] S[i];
+//        }
+//        delete[] S;
+//        return mS;
+        return matrix(n, S);
     }
 
+    matrix operator () (const int a, const int b) {             //Взятие минора
+        int **S = new int *[n - 1];
+        int i_m = 0;
+        int j_m = 0;
+        for (int i = 0; i < n; i++) {
+            if (i != a) {
+                S[i_m] = new int [n - 1];
+                for (int j = 0; j < n; j++) {
+                    if (j != b) {
+                        S[i_m][j_m] = A[i][j];
+                        j_m++;
+                    }
+                }
+                j_m = 0;
+                i_m++;
+            }
+        }
+//        matrix mS (n - 1, S);
+//        for (int i = 0; i < n - 1; i++) {
+//            delete[] S[i];
+//        }
+//        delete[] S;
+//        return mS;
+        return matrix(n - 1, S);
+    }
+
+//    int* operator [] (const int a) {
+//        int **S = new int *[n];
+//        for (int i = 0; i < n; i++) {
+//            for (int j = 0; j < n; j++) {
+//
+//            }
+//        }
+//        return S;
+//    }
+//
+//    int* operator () (const int a) {
+//        int *S = new int [n];
+//        for (int i = 0; i < n; i++) {
+//            for (int j = 0; j < n; j++) {
+//
+//            }
+//        }
+//        return S;
+//    }
 
     matrix& operator ! () {            //Транспонирование матрицы
         //int **S = new int *[n];
@@ -215,12 +290,18 @@ int main() {
     matrix K = matrix(n, k);
 
     ((A + (B * !C) + K) * (!D)).print_matrix();
-//    !C;
-//    !D;
-//    B * C;
-//    A + B;
-//    A + K;
-//    A * D;
-//    A.print_matrix();
+
+//    matrix K = matrix(n, k);
+//    K(2, 2).print_matrix();
+
+
+    !C;
+    !D;
+    B * C;
+    A + B;
+    A + K;
+    A * D;
+    A.print_matrix();
+//delete
     return 0;
 }
