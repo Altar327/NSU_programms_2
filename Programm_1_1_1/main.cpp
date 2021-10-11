@@ -4,15 +4,33 @@
 
 using namespace std;
 
+class matrix;
+
+class SmartArray {
+private:
+    int flag;
+    int a;
+    matrix &S;
+    friend class matrix;
+public:
+    SmartArray(int flag, int a, matrix &S) : flag(flag), a(a), S(S) {}
+
+    void printArr() const;
+    int& operator[] (int b);
+};
+
 void _swap (int& a, int& b) {
     int c = a;
     a = b;
     b = c;
 }
 
+
+
 class matrix {
     int n;                  //Размерность матрицы
     int **A;                //Сама матрица
+    friend class SmartArray;
 public:
     matrix() : n(0), A(nullptr) {}
 
@@ -115,6 +133,9 @@ public:
 
 
     ~matrix() {
+        for (int i = 0; i < n; i++) {
+            delete[] A[i];
+        }
         delete[] A;
     };
 
@@ -212,25 +233,27 @@ public:
         return matrix(n - 1, S);
     }
 
-//    int* operator [] (const int a) {
+    SmartArray operator [] (const int a) {              //Взятие строки
+        if (n < a) {
+            cout << "Я всего лишь машина откуда мне знать как это работает";
+            throw;
+        }
 //        int **S = new int *[n];
 //        for (int i = 0; i < n; i++) {
 //            for (int j = 0; j < n; j++) {
 //
 //            }
 //        }
-//        return S;
-//    }
-//
-//    int* operator () (const int a) {
-//        int *S = new int [n];
-//        for (int i = 0; i < n; i++) {
-//            for (int j = 0; j < n; j++) {
-//
-//            }
-//        }
-//        return S;
-//    }
+        return SmartArray(0, a, *this);
+    }
+
+    SmartArray operator () (const int a) {          //Взятие столбца
+        if (n < a) {
+            cout << "Я всего лишь машина откуда мне знать как это работает";
+            throw;
+        }
+        return SmartArray(1, a, *this);
+    }
 
     matrix& operator ! () {            //Транспонирование матрицы
         //int **S = new int *[n];
@@ -275,33 +298,54 @@ public:
     }
 
 };
-//matrix operator () (int a, int b) {
-//
-//}
+
+
+int& SmartArray:: operator [] (int b) {
+    if (b > S.n) {
+        cout << "Я всего лишь машина откуда мне знать как это работает";
+        throw;
+    }
+    return S.A[a][b];
+}
+
+void SmartArray:: printArr() const {
+    if (flag == 0) {
+        for (int i = 0; i < S.n; i++) {
+            cout << S.A[a][i] << ' ';
+        }
+    } else {
+        for (int i = 0; i < S.n; i++) {
+            cout << S.A[i][a] << endl;
+        }
+    }
+}
+
+
 
 int main() {
     int n, k;
     cin >> n;
     cin >> k;
-    matrix A = matrix(n);
-    matrix B = matrix(n);
-    matrix C = matrix(n);
-    matrix D = matrix(n);
+//    matrix A = matrix(n);
+//    matrix B = matrix(n);
+//    matrix C = matrix(n);
+//    matrix D = matrix(n);
     matrix K = matrix(n, k);
-
-    ((A + (B * !C) + K) * (!D)).print_matrix();
-
-//    matrix K = matrix(n, k);
-//    K(2, 2).print_matrix();
-
-
-    !C;
-    !D;
-    B * C;
-    A + B;
-    A + K;
-    A * D;
-    A.print_matrix();
+//
+//    ((A + (B * !C) + K) * (!D)).print_matrix();
+//
+////    matrix K = matrix(n, k);
+////    K(2, 2).print_matrix();
+//
+//
+//    !C;
+//    !D;
+//    B * C;
+//    A + B;
+//    A + K;
+//    A * D;
+//    A.print_matrix();
 //delete
+K[2].printArr();
     return 0;
 }
