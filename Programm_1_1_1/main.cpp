@@ -4,16 +4,16 @@
 
 using namespace std;
 
-class matrix;
+class Matrix;
 
 class SmartArray {
 private:
-    int flag;
+    bool flag;
     int a;
-    matrix &S;
-    friend class matrix;
+    Matrix &S;
+    friend class Matrix;
 public:
-    SmartArray(int flag, int a, matrix &S) : flag(flag), a(a), S(S) {}
+    SmartArray(bool flag, int a, Matrix &S) : flag(flag), a(a), S(S) {}
 
     void printArr() const;
     int& operator[] (int b);
@@ -27,14 +27,21 @@ void _swap (int& a, int& b) {
 
 
 
-class matrix {
+class Matrix {
     int n;                  //Размерность матрицы
     int **A;                //Сама матрица
     friend class SmartArray;
-public:
-    matrix() : n(0), A(nullptr) {}
 
-    matrix(int N) : n(N) {
+    void matrix_allocate_memory () {
+        A = new int *[n];
+        for (int i = 0; i < n; i++) {
+            A[i] = new int [n];
+        }
+    }
+public:
+    Matrix() : n(0), A(nullptr) {}
+
+    Matrix(int N) : n(N) {
         A = new int *[n];
         for (int i = 0; i < n; i++) {
             A[i] = new int [n];
@@ -44,11 +51,16 @@ public:
         }
     };
 
-    matrix& operator=(const matrix& inst) {
+    Matrix& operator=(const Matrix& inst) {
         n = inst.n;
-        A = new int *[n];
+
         for (int i = 0; i < n; i++) {
-            A[i] = new int [n];
+            delete[] A[i];
+        }
+        delete[] A;
+
+        matrix_allocate_memory ();
+        for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 A[i][j] = inst.A[i][j];
             }
@@ -56,10 +68,9 @@ public:
         return *this;
     };
 
-    matrix(int N, int k) : n(N) {
-        A = new int *[n];
+    Matrix(int N, int k) : n(N) {
+        matrix_allocate_memory ();
         for (int i = 0; i < n; i++) {
-            A[i] = new int [n];
             for (int j = 0; j < n; j++) {
                 if (j == i) {
                     A[i][j] = k;
@@ -70,9 +81,9 @@ public:
         }
     };
 
-    matrix(int N, int **values) : n(N) {
-        this->A = values;
-    }
+//    Matrix(int N, int **values) : n(N) {
+//        this->A = values;
+//    }
 
 //    matrix(int N1, int N2, int **values) {                //Конструктор матрицы размерности n1 на n2
 //        A = new int *[N1];
@@ -88,7 +99,7 @@ public:
         return n;
     }
 
-    int get_count(int i, int j) const {
+    int get_element(int i, int j) const {
         return A[i][j];
     }
 
@@ -132,7 +143,7 @@ public:
 //    }
 
 
-    ~matrix() {
+    ~Matrix() {
         for (int i = 0; i < n; i++) {
             delete[] A[i];
         }
@@ -140,17 +151,27 @@ public:
     };
 
 
-    matrix operator +(const matrix &m2) {
+    Matrix operator +(const Matrix &m2) {
         if (n != m2.n) {
-            cout << "Невозможно сложить матрицы разной размерности";
-            return matrix();
+            throw "Невозможно сложить матрицы разной размерности";
         }
-        matrix m_sum = matrix(n, 0);
-        int **S = new int *[n];
+        Matrix m = Matrix(n, 0);
         for (int i = 0; i < n; i++) {
-            S[i] = new int [n];
             for (int j = 0; j < n; j++) {
-                S[i][j] = A[i][j] + m2.A[i][j];
+                m[i][j] = A[i][j] + m2.A[i][j];
+            }
+        }
+        return m;
+    }
+
+    Matrix operator - (const Matrix &m2) {
+        if (n != m2.n) {
+            throw "Невозможно вычесть матрицы разной размерности";
+        }
+        Matrix m = Matrix(n, 0);
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                m[i][j] = A[i][j] - m2.get_element(i, j);
             }
         }
 //        matrix mS (n, S);
@@ -159,42 +180,19 @@ public:
 //        }
 //        delete[] S;
 //        return mS;
-        return matrix(n, S);
+        return m;
     }
 
-    matrix operator - (const matrix &m2) {
+    Matrix operator* (const Matrix &m2) {
         if (n != m2.n) {
-            cout << "Невозможно вычесть матрицы разной размерности";
-            return matrix();
+            throw "Я всего лишь машина откуда мне знать как это умножить";
         }
-        int **S = new int *[n];
+        Matrix m = Matrix(n, 0);
         for (int i = 0; i < n; i++) {
-            S[i] = new int [n];
             for (int j = 0; j < n; j++) {
-                S[i][j] = A[i][j] - m2.get_count(i, j);
-            }
-        }
-//        matrix mS (n, S);
-//        for (int i = 0; i < n; i++) {
-//            delete[] S[i];
-//        }
-//        delete[] S;
-//        return mS;
-        return matrix(n, S);
-    }
-
-    matrix operator* (const matrix &m2) {
-        if (n != m2.n) {
-            cout << "Я всего лишь машина откуда мне знать как это умножить";
-            return matrix();
-        }
-        int **S = new int *[n];
-        for (int i = 0; i < n; i++) {
-            S[i] = new int [n];
-            for (int j = 0; j < n; j++) {
-                S[i][j] = 0;
+                m[i][j] = 0;
                 for (int f = 0; f < n; f++) {
-                    S[i][j] += A[i][f] * m2.A[f][j];
+                    m[i][j] += A[i][f] * m2.A[f][j];
                 }
             }
         }
@@ -204,19 +202,18 @@ public:
 //        }
 //        delete[] S;
 //        return mS;
-        return matrix(n, S);
+        return m;
     }
 
-    matrix operator () (const int a, const int b) {             //Взятие минора
-        int **S = new int *[n - 1];
+    Matrix operator () (const int a, const int b) {             //Взятие минора
+        Matrix m = Matrix(n, 0);
         int i_m = 0;
         int j_m = 0;
         for (int i = 0; i < n; i++) {
             if (i != a) {
-                S[i_m] = new int [n - 1];
                 for (int j = 0; j < n; j++) {
                     if (j != b) {
-                        S[i_m][j_m] = A[i][j];
+                        m[i_m][j_m] = A[i][j];
                         j_m++;
                     }
                 }
@@ -230,32 +227,24 @@ public:
 //        }
 //        delete[] S;
 //        return mS;
-        return matrix(n - 1, S);
+        return m;
     }
 
     SmartArray operator [] (const int a) {              //Взятие строки
         if (n < a) {
-            cout << "Я всего лишь машина откуда мне знать как это работает";
-            throw;
+            throw "Я всего лишь машина откуда мне знать как это работает";
         }
-//        int **S = new int *[n];
-//        for (int i = 0; i < n; i++) {
-//            for (int j = 0; j < n; j++) {
-//
-//            }
-//        }
         return SmartArray(0, a, *this);
     }
 
     SmartArray operator () (const int a) {          //Взятие столбца
         if (n < a) {
-            cout << "Я всего лишь машина откуда мне знать как это работает";
-            throw;
+            throw "Я всего лишь машина откуда мне знать как это работает";
         }
         return SmartArray(1, a, *this);
     }
 
-    matrix& operator ! () {            //Транспонирование матрицы
+    Matrix& operator ! () {            //Транспонирование матрицы
         //int **S = new int *[n];
         for (int i = 0; i < n; i++) {
             //S = new int *[n];
@@ -266,10 +255,9 @@ public:
         return *this;
     }
 
-    matrix operator == (const matrix &m2) {
+    Matrix operator == (const Matrix &m2) {
         if (n != m2.get_n()) {
-            cout << "Я всего лишь машина откуда мне знать как это сравнивать";
-            return matrix();
+            throw "Я всего лишь машина откуда мне знать как это сравнивать";
         }
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -281,11 +269,11 @@ public:
         return 1;
     }
 
-    matrix operator != (const matrix &m2) {
+    Matrix operator != (const Matrix &m2) {
         if (n != m2.n) {
             cout << "Я всего лишь машина откуда мне знать как это сравнивать";
-            cout << "Press F to pay respect";
-            return matrix();
+            throw "Press F to pay respect";
+
         }
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -302,14 +290,17 @@ public:
 
 int& SmartArray:: operator [] (int b) {
     if (b > S.n) {
-        cout << "Я всего лишь машина откуда мне знать как это работает";
-        throw;
+        throw "Я всего лишь машина откуда мне знать как это работает";
     }
-    return S.A[a][b];
+    if (flag) {
+        return S.A[b][a];
+    } else {
+        return S.A[a][b];
+    }
 }
 
 void SmartArray:: printArr() const {
-    if (flag == 0) {
+    if (!flag) {
         for (int i = 0; i < S.n; i++) {
             cout << S.A[a][i] << ' ';
         }
@@ -326,16 +317,16 @@ int main() {
     int n, k;
     cin >> n;
     cin >> k;
-//    matrix A = matrix(n);
-//    matrix B = matrix(n);
-//    matrix C = matrix(n);
-//    matrix D = matrix(n);
-    matrix K = matrix(n, k);
+    Matrix A = Matrix(n);
+    Matrix B = Matrix(n);
+    Matrix C = Matrix(n);
+    Matrix D = Matrix(n);
+    Matrix K = Matrix(n, k);
 //
-//    ((A + (B * !C) + K) * (!D)).print_matrix();
+    ((A + (B * !C) + K) * (!D)).print_matrix();
 //
-////    matrix K = matrix(n, k);
-////    K(2, 2).print_matrix();
+//    matrix K = matrix(n, k);
+//    K(2, 2).print_matrix();
 //
 //
 //    !C;
@@ -346,6 +337,6 @@ int main() {
 //    A * D;
 //    A.print_matrix();
 //delete
-K[2].printArr();
+//K[2].printArr();
     return 0;
 }
