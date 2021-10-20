@@ -171,33 +171,33 @@ public:
         return os;
     }
 
-//    friend ostream& operator << (ostream& os, const Matrix& m)            //перегрузка оператора для считывание из файла
-//    {
-//        ofstream name_file;
-//        name_file.open("test");
-//        for (int i = 0; i < m.get_n(); i++) {
-//            for (int j = 0; j < m.get_n(); j++) {
-//                name_file << m.get_element(i, j);
-//            }
-//            name_file << endl;
-//        }
-//        name_file.close();
-//        return os;
-//    }
+    friend ostream& operator << (ostream& os, const Matrix& m)            //перегрузка оператора для считывание из файла
+    {
+        ofstream name_file;
+        name_file.open("test");
+        for (int i = 0; i < m.get_n(); i++) {
+            for (int j = 0; j < m.get_n(); j++) {
+                name_file << m.get_element(i, j);
+            }
+            name_file << endl;
+        }
+        name_file.close();
+        return os;
+    }
 
-//    friend ostream& operator << (ostream& os, const Matrix& m)            //перегрузка оператора для считывание из файла
-//    {
-//        ofstream name_file;
-//        name_file.open("test");
-//        for (int i = 0; i < m.get_n(); i++) {
-//            for (int j = 0; j < m.get_n(); j++) {
-//                name_file >> m.get_element(i, j);
-//            }
-//            name_file >> endl;
-//        }
-//        name_file.close();
-//        return os;
-//    }
+    friend istream& operator >> (ostream& os, const Matrix& m)            //перегрузка оператора для вывода из файла
+    {
+        ofstream name_file;
+        name_file.open("test");
+        for (int i = 0; i < m.get_n(); i++) {
+            for (int j = 0; j < m.get_n(); j++) {
+                name_file >> m.get_element(i, j);
+            }
+            name_file >> endl;
+        }
+        name_file.close();
+        return os;
+    }
 
     Matrix operator +(const Matrix &m2) {
         if (n != m2.n) {
