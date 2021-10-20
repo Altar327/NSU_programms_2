@@ -103,14 +103,14 @@ public:
         return A[i][j];
     }
 
-    void print_matrix() const {
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                cout << A[i][j] << ' ';
-            }
-            cout << endl;
-        }
-    };
+//    void print_matrix() const {
+//        for (int i = 0; i < n; i++) {
+//            for (int j = 0; j < n; j++) {
+//                cout << A[i][j] << ' ';
+//            }
+//            cout << endl;
+//        }
+//    };
 
     void fout_matrix() const {
         ofstream name_file;
@@ -120,7 +120,6 @@ public:
                 name_file << A[i][j];
             }
             name_file << endl;
-//            cout << '\n';
         }
     };
 
@@ -129,9 +128,9 @@ public:
 //        name_file.open("test");
 //        for (int i = 0; i < n; i++) {
 //            for (int j = 0; j < n; j++) {
-//                name_file << A[i][j];
+//                name_file >> A[i][j];
 //            }
-//            name_file << endl;
+//            name_file >> endl;
 ////            cout << '\n';
 //        }
 //    };
@@ -150,6 +149,55 @@ public:
         delete[] A;
     };
 
+
+//    void operator >> () {
+//        for (int i = 0; i < n; i++) {
+//            for (int j = 0; j < n; j++) {
+//                cout << A[i][j] << ' ';
+//            }
+//            cout << endl;
+//        }
+//    }
+
+
+    friend ostream& operator <<(ostream& os, const Matrix& m)
+    {
+        for (int i = 0; i < m.get_n(); i++) {
+            for (int j = 0; j < m.get_n(); j++) {
+                cout << m.get_element(i, j) << ' ';
+            }
+            cout << endl;
+        }
+        return os;
+    }
+
+//    friend ostream& operator << (ostream& os, const Matrix& m)            //перегрузка оператора для считывание из файла
+//    {
+//        ofstream name_file;
+//        name_file.open("test");
+//        for (int i = 0; i < m.get_n(); i++) {
+//            for (int j = 0; j < m.get_n(); j++) {
+//                name_file << m.get_element(i, j);
+//            }
+//            name_file << endl;
+//        }
+//        name_file.close();
+//        return os;
+//    }
+
+//    friend ostream& operator << (ostream& os, const Matrix& m)            //перегрузка оператора для считывание из файла
+//    {
+//        ofstream name_file;
+//        name_file.open("test");
+//        for (int i = 0; i < m.get_n(); i++) {
+//            for (int j = 0; j < m.get_n(); j++) {
+//                name_file >> m.get_element(i, j);
+//            }
+//            name_file >> endl;
+//        }
+//        name_file.close();
+//        return os;
+//    }
 
     Matrix operator +(const Matrix &m2) {
         if (n != m2.n) {
@@ -323,7 +371,8 @@ int main() {
     Matrix D = Matrix(n);
     Matrix K = Matrix(n, k);
 //
-    ((A + (B * !C) + K) * (!D)).print_matrix();
+    cout << ((A + (B * !C) + K) * (!D));
+//    .print_matrix();
 //
 //    matrix K = matrix(n, k);
 //    K(2, 2).print_matrix();
