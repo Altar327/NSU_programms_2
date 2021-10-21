@@ -5,6 +5,7 @@
 using namespace std;
 
 class Matrix;
+struct Node_SmartArrays;
 
 class SmartArray {
 private:
@@ -15,8 +16,13 @@ private:
 public:
     SmartArray(bool flag, int a, Matrix &S) : flag(flag), a(a), S(S) {}
 
+    Matrix& get_S () {
+        return S;
+    };
     void printArr() const;
     int& operator[] (int b);
+    ~SmartArray();
+    SmartArray &operator= (SmartArray &sm);
 };
 
 void _swap (int& a, int& b) {
@@ -25,12 +31,70 @@ void _swap (int& a, int& b) {
     b = c;
 }
 
+struct Node_SmartArrays {
+    SmartArray* node = nullptr;
+    Node_SmartArrays* next_node = nullptr;
+
+    friend Matrix;
+    friend SmartArray;
+
+    Node_SmartArrays(SmartArray* sm) : node(sm), next_node(nullptr) {}
+
+    Node_SmartArrays* append (SmartArray* new_node) {
+        if (this == nullptr) {
+            return new Node_SmartArrays(new_node);
+        } else if (next_node == nullptr) {
+            next_node = new Node_SmartArrays(new_node);
+            next_node->node = new_node;
+        } else {
+            next_node->append(new_node);
+        }
+        return this;
+    }
+
+    Node_SmartArrays* delete_ (SmartArray* n) {
+        if (this == nullptr) {
+            return this;
+        } else if (n == node) {
+            Node_SmartArrays* temp = next_node;
+            delete n;
+            return temp;
+        } else if (n == next_node->get_node()) {
+            next_node = next_node->delete_(n);
+        } else if (next_node != nullptr) {
+            next_node->delete_(n);
+        }
+        return this;
+    }
+
+    Node_SmartArrays* get_next_node () {
+        return next_node;
+    }
+
+    SmartArray* get_node () {
+        return node;
+    }
+
+    friend Node_SmartArrays* step_forward (Node_SmartArrays* head) {
+        while (head->get_next_node() != nullptr) {
+            return step_forward(head->next_node);
+        }
+        return head;
+    }
+
+    ~Node_SmartArrays() {
+        while (step_forward(this) != this) {
+            delete step_forward(this);
+        }
+    }
+};
 
 
 class Matrix {
     int n;                  //Размерность матрицы
     int **A;                //Сама матрица
     friend class SmartArray;
+    Node_SmartArrays* head = nullptr;
 
     void matrix_allocate_memory () {
         A = new int *[n];
@@ -103,6 +167,10 @@ public:
         return A[i][j];
     }
 
+    Node_SmartArrays* get_head() const {
+        return head;
+    }
+
 //    void print_matrix() const {
 //        for (int i = 0; i < n; i++) {
 //            for (int j = 0; j < n; j++) {
@@ -146,6 +214,7 @@ public:
         for (int i = 0; i < n; i++) {
             delete[] A[i];
         }
+        delete head;
         delete[] A;
     };
 
@@ -171,33 +240,33 @@ public:
         return os;
     }
 
-    friend ostream& operator << (ostream& os, const Matrix& m)            //перегрузка оператора для считывание из файла
-    {
-        ofstream name_file;
-        name_file.open("test");
-        for (int i = 0; i < m.get_n(); i++) {
-            for (int j = 0; j < m.get_n(); j++) {
-                name_file << m.get_element(i, j);
-            }
-            name_file << endl;
-        }
-        name_file.close();
-        return os;
-    }
-
-    friend istream& operator >> (ostream& os, const Matrix& m)            //перегрузка оператора для вывода из файла
-    {
-        ofstream name_file;
-        name_file.open("test");
-        for (int i = 0; i < m.get_n(); i++) {
-            for (int j = 0; j < m.get_n(); j++) {
-                name_file >> m.get_element(i, j);
-            }
-            name_file >> endl;
-        }
-        name_file.close();
-        return os;
-    }
+//    friend ostream& operator << (ostream& os, const Matrix& m)            //перегрузка оператора для считывание из файла
+//    {
+//        ofstream name_file;
+//        name_file.open("test");
+//        for (int i = 0; i < m.get_n(); i++) {
+//            for (int j = 0; j < m.get_n(); j++) {
+//                name_file << m.get_element(i, j);
+//            }
+//            name_file << endl;
+//        }
+//        name_file.close();
+//        return os;
+//    }
+//
+//    friend istream& operator >> (ostream& os, const Matrix& m)            //перегрузка оператора для вывода из файла
+//    {
+//        ofstream name_file;
+//        name_file.open("test");
+//        for (int i = 0; i < m.get_n(); i++) {
+//            for (int j = 0; j < m.get_n(); j++) {
+//                name_file >> m.get_element(i, j);
+//            }
+//            name_file >> endl;
+//        }
+//        name_file.close();
+//        return os;
+//    }
 
     Matrix operator +(const Matrix &m2) {
         if (n != m2.n) {
@@ -222,12 +291,6 @@ public:
                 m[i][j] = A[i][j] - m2.get_element(i, j);
             }
         }
-//        matrix mS (n, S);
-//        for (int i = 0; i < n; i++) {
-//            delete[] S[i];
-//        }
-//        delete[] S;
-//        return mS;
         return m;
     }
 
@@ -244,12 +307,6 @@ public:
                 }
             }
         }
-//        matrix mS (n, S);
-//        for (int i = 0; i < n; i++) {
-//            delete[] S[i];
-//        }
-//        delete[] S;
-//        return mS;
         return m;
     }
 
@@ -269,12 +326,6 @@ public:
                 i_m++;
             }
         }
-//        matrix mS (n - 1, S);
-//        for (int i = 0; i < n - 1; i++) {
-//            delete[] S[i];
-//        }
-//        delete[] S;
-//        return mS;
         return m;
     }
 
@@ -282,14 +333,18 @@ public:
         if (n < a) {
             throw "Я всего лишь машина откуда мне знать как это работает";
         }
-        return SmartArray(0, a, *this);
+        SmartArray* sm = new SmartArray(0, a, *this);
+        head = head->append(sm);
+        return *sm;
     }
 
     SmartArray operator () (const int a) {          //Взятие столбца
         if (n < a) {
             throw "Я всего лишь машина откуда мне знать как это работает";
         }
-        return SmartArray(1, a, *this);
+        SmartArray* sm = new SmartArray(1, a, *this);
+        head = head->append(sm);
+        return *sm;
     }
 
     Matrix& operator ! () {            //Транспонирование матрицы
@@ -347,6 +402,11 @@ int& SmartArray:: operator [] (int b) {
     }
 }
 
+SmartArray &SmartArray::operator= (SmartArray &sm) {
+    get_S().get_head()->append(this);
+    return sm;
+}
+
 void SmartArray:: printArr() const {
     if (!flag) {
         for (int i = 0; i < S.n; i++) {
@@ -359,19 +419,23 @@ void SmartArray:: printArr() const {
     }
 }
 
+SmartArray :: ~SmartArray() {
+    S.get_head()->delete_(this);
+};
+
 
 
 int main() {
     int n, k;
     cin >> n;
     cin >> k;
-    Matrix A = Matrix(n);
+    Matrix* A = new Matrix(n);
     Matrix B = Matrix(n);
     Matrix C = Matrix(n);
     Matrix D = Matrix(n);
     Matrix K = Matrix(n, k);
 //
-    cout << ((A + (B * !C) + K) * (!D));
+//    cout << ((A + (B * !C) + K) * (!D));
 //    .print_matrix();
 //
 //    matrix K = matrix(n, k);
@@ -386,6 +450,11 @@ int main() {
 //    A * D;
 //    A.print_matrix();
 //delete
-//K[2].printArr();
+//K[1].printArr();
+
+    SmartArray test = (*A)[1];
+    delete A;
+    test.printArr();
+
     return 0;
 }
