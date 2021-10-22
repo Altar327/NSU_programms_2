@@ -5,24 +5,27 @@
 using namespace std;
 
 class Matrix;
-struct Node_SmartArrays;
+class List_SmartArrays;
 
 class SmartArray {
 private:
     bool flag;
     int a;
-    Matrix &S;
+    const Matrix &S;
+    bool flag_life;
+
     friend class Matrix;
 public:
-    SmartArray(bool flag, int a, Matrix &S) : flag(flag), a(a), S(S) {}
+    SmartArray(bool flag, int a, Matrix &S) : flag(flag), a(a), S(S), flag_life(false) {}
 
-    Matrix& get_S () {
-        return S;
-    };
+    void rise_flag () {
+        flag_life = true;
+    }
+
     void printArr() const;
     int& operator[] (int b);
     ~SmartArray();
-    SmartArray &operator= (SmartArray &sm);
+    SmartArray* &operator= (SmartArray* &sm);
 };
 
 void _swap (int& a, int& b) {
@@ -31,70 +34,85 @@ void _swap (int& a, int& b) {
     b = c;
 }
 
-struct Node_SmartArrays {
-    SmartArray* node = nullptr;
-    Node_SmartArrays* next_node = nullptr;
+class Node {
+    Node *next_node;
+    SmartArray *SmartArray_adress;
 
-    friend Matrix;
-    friend SmartArray;
-
-    Node_SmartArrays(SmartArray* sm) : node(sm), next_node(nullptr) {}
-
-    Node_SmartArrays* append (SmartArray* new_node) {
-        if (this == nullptr) {
-            return new Node_SmartArrays(new_node);
-        } else if (next_node == nullptr) {
-            next_node = new Node_SmartArrays(new_node);
-            next_node->node = new_node;
-        } else {
-            next_node->append(new_node);
-        }
-        return this;
-    }
-
-    Node_SmartArrays* delete_ (SmartArray* n) {
-        if (this == nullptr) {
-            return this;
-        } else if (n == node) {
-            Node_SmartArrays* temp = next_node;
-            delete n;
-            return temp;
-        } else if (n == next_node->get_node()) {
-            next_node = next_node->delete_(n);
-        } else if (next_node != nullptr) {
-            next_node->delete_(n);
-        }
-        return this;
-    }
-
-    Node_SmartArrays* get_next_node () {
-        return next_node;
-    }
-
-    SmartArray* get_node () {
-        return node;
-    }
-
-    friend Node_SmartArrays* step_forward (Node_SmartArrays* head) {
-        while (head->get_next_node() != nullptr) {
-            return step_forward(head->next_node);
-        }
-        return head;
-    }
-
-    ~Node_SmartArrays() {
-        while (step_forward(this) != this) {
-            delete step_forward(this);
-        }
+    friend class List_SmartArrays;
+public:
+    Node(SmartArray *SmartArray_adress) {
+        next_node = nullptr;
+        this->SmartArray_adress = SmartArray_adress;
     }
 };
 
+class List_SmartArrays {
+    Node *head, *end;
+public:
+    List_SmartArrays() {
+        head = nullptr;
+        end = nullptr;
+    }
+
+    void append(SmartArray *SmartArray_adress) {
+        Node *newN = new Node(SmartArray_adress);
+        if (head == nullptr && end == nullptr) {
+            head = newN;
+            end = newN;
+        } else {
+            end->next_node = newN;
+            end = end->next_node;
+        }
+    }
+
+    void delete_ (SmartArray *SmartArray_adress) {
+        if (SmartArray_adress == head->SmartArray_adress) {
+            Node *temp = head->next_node;
+            delete head;
+            head = temp;
+        } else {
+            Node *previousNode = nullptr;
+            Node *currentNode = head;
+            while (currentNode != nullptr and currentNode->SmartArray_adress != SmartArray_adress) {
+                previousNode = currentNode;
+                currentNode = currentNode->next_node;
+            }
+            if (currentNode == nullptr)
+                return;
+
+            Node *temp = currentNode->next_node;
+            delete currentNode;
+            if (previousNode == head) {
+                end = head;
+            }
+            previousNode->next_node = temp;
+        }
+    }
+
+    void make_inaccessible() {
+        Node *current = head;
+        while (current != nullptr) {
+            current->SmartArray_adress->rise_flag();
+            current = current->next_node;
+        }
+    }
+
+    ~List_SmartArrays() {
+        Node *current = head;
+        while (current != nullptr) {
+            Node *temp = head->next_node;
+            delete current;
+            current = temp;
+        }
+    }
+};
 
 class Matrix {
     int n;                  //Размерность матрицы
     int **A;                //Сама матрица
     friend class SmartArray;
-    Node_SmartArrays* head = nullptr;
+    List_SmartArrays* head = nullptr;
+//    Node_SmartArrays* head = nullptr;
 
     void matrix_allocate_memory () {
         A = new int *[n];
@@ -102,8 +120,9 @@ class Matrix {
             A[i] = new int [n];
         }
     }
+
 public:
-    Matrix() : n(0), A(nullptr) {}
+    Matrix() : n(0), A(nullptr), head(nullptr) {}
 
     Matrix(int N) : n(N) {
         A = new int *[n];
@@ -113,11 +132,14 @@ public:
                 cin >> A[i][j];
             }
         }
+        head = new List_SmartArrays;
     };
 
     Matrix& operator=(const Matrix& inst) {
         n = inst.n;
-
+        head->make_inaccessible();
+        delete head;
+        head = new List_SmartArrays;
         for (int i = 0; i < n; i++) {
             delete[] A[i];
         }
@@ -143,21 +165,8 @@ public:
                 }
             }
         }
+        head = new List_SmartArrays;
     };
-
-//    Matrix(int N, int **values) : n(N) {
-//        this->A = values;
-//    }
-
-//    matrix(int N1, int N2, int **values) {                //Конструктор матрицы размерности n1 на n2
-//        A = new int *[N1];
-//        for (int i = 0; i < N1; i++) {
-//            A[i] = new int [n];
-//            for (int j = 0; j < N2; j++) {
-//                cin >> A[i][j];
-//            }
-//        }
-//    };
 
     int get_n() const {
         return n;
@@ -167,7 +176,7 @@ public:
         return A[i][j];
     }
 
-    Node_SmartArrays* get_head() const {
+    List_SmartArrays* get_head() const {
         return head;
     }
 
@@ -214,6 +223,7 @@ public:
         for (int i = 0; i < n; i++) {
             delete[] A[i];
         }
+        head->make_inaccessible();
         delete head;
         delete[] A;
     };
@@ -333,24 +343,22 @@ public:
         if (n < a) {
             throw "Я всего лишь машина откуда мне знать как это работает";
         }
-        SmartArray* sm = new SmartArray(0, a, *this);
-        head = head->append(sm);
-        return *sm;
+        SmartArray sm(0, a, *this);
+        head->append(&sm);
+        return sm;
     }
 
     SmartArray operator () (const int a) {          //Взятие столбца
         if (n < a) {
             throw "Я всего лишь машина откуда мне знать как это работает";
         }
-        SmartArray* sm = new SmartArray(1, a, *this);
-        head = head->append(sm);
-        return *sm;
+        SmartArray sm(1, a, *this);
+        head->append(&sm);
+        return sm;
     }
 
     Matrix& operator ! () {            //Транспонирование матрицы
-        //int **S = new int *[n];
         for (int i = 0; i < n; i++) {
-            //S = new int *[n];
             for (int j = 0; j < i; j++) {
                 _swap(A[i][j], A[j][i]);
             }
@@ -365,11 +373,11 @@ public:
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 if (A[i][j] != m2.A[i][j]) {
-                    return 0;
+                    return false;
                 }
             }
         }
-        return 1;
+        return true;
     }
 
     Matrix operator != (const Matrix &m2) {
@@ -381,49 +389,61 @@ public:
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
                 if (A[i][j] != m2.A[i][j]) {
-                    return 1;
+                    return true;
                 }
             }
         }
-        return 0;
+        return false;
     }
-
 };
 
 
 int& SmartArray:: operator [] (int b) {
-    if (b > S.n) {
-        throw "Я всего лишь машина откуда мне знать как это работает";
-    }
-    if (flag) {
-        return S.A[b][a];
+    if (!flag_life) {
+        if (b > S.n) {
+            throw "Я всего лишь машина откуда мне знать как это работает";
+        }
+        if (flag) {
+            return S.A[b][a];
+        } else {
+            return S.A[a][b];
+        }
     } else {
-        return S.A[a][b];
+        throw "Ошибка";
     }
 }
 
-SmartArray &SmartArray::operator= (SmartArray &sm) {
-    get_S().get_head()->append(this);
-    return sm;
+SmartArray* &SmartArray::operator= (SmartArray* &sm) {
+    if (!flag_life) {
+        return sm;
+    } else {
+        throw "Ошибка";
+    }
 }
 
 void SmartArray:: printArr() const {
-    if (!flag) {
-        for (int i = 0; i < S.n; i++) {
-            cout << S.A[a][i] << ' ';
+    if (!flag_life) {
+        if (!flag) {
+            for (int i = 0; i < S.n; i++) {
+                cout << S.A[a][i] << ' ';
+            }
+        } else {
+            for (int i = 0; i < S.n; i++) {
+                cout << S.A[i][a] << endl;
+            }
         }
     } else {
-        for (int i = 0; i < S.n; i++) {
-            cout << S.A[i][a] << endl;
-        }
+        throw "Ошибка";
     }
 }
 
 SmartArray :: ~SmartArray() {
-    S.get_head()->delete_(this);
-};
-
-
+    if (!flag_life) {
+        S.get_head()->delete_(this);
+    } else {
+        throw "Ошибка";
+    }
+}
 
 int main() {
     int n, k;
@@ -452,7 +472,10 @@ int main() {
 //delete
 //K[1].printArr();
 
-    SmartArray test = (*A)[1];
+    SmartArray test = (*A)(2);
+    {
+        SmartArray smartArray = (*A)[1];
+    }
     delete A;
     test.printArr();
 
