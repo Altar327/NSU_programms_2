@@ -107,7 +107,7 @@ class Matrix {
     int n;                  //Размерность матрицы
     int **A;                //Сама матрица
     friend class SmartArray;
-    List_SmartArrays* head = nullptr;
+    List_SmartArrays* head;
 //    Node_SmartArrays* head = nullptr;
 
     void matrix_allocate_memory () {
