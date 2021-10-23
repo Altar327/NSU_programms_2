@@ -25,7 +25,7 @@ public:
     void printArr() const;
     int& operator[] (int b);
     ~SmartArray();
-    SmartArray &operator= (SmartArray &sm);
+//    SmartArray &operator= (SmartArray &sm);
 };
 
 void _swap (int& a, int& b) {
@@ -108,7 +108,6 @@ class Matrix {
     int **A;                //Сама матрица
     friend class SmartArray;
     List_SmartArrays* head;
-//    Node_SmartArrays* head = nullptr;
 
     void matrix_allocate_memory () {
         A = new int *[n];
@@ -409,13 +408,13 @@ int& SmartArray:: operator [] (int b) {
     }
 }
 
-SmartArray &SmartArray::operator= (SmartArray &sm) {
-    if (!flag_death) {
-        return sm;
-    } else {
-        throw "Матрица уже мертва";
-    }
-}
+//SmartArray &SmartArray::operator= (SmartArray &sm) {
+//    if (!flag_death) {
+//        return sm;
+//    } else {
+//        throw "Матрица уже мертва";
+//    }
+//}
 
 void SmartArray:: printArr() const {
     if (!flag_death) {
