@@ -12,20 +12,20 @@ private:
     bool flag;
     int a;
     const Matrix &S;
-    bool flag_life;
+    bool flag_death;
 
     friend class Matrix;
 public:
-    SmartArray(bool flag, int a, Matrix &S) : flag(flag), a(a), S(S), flag_life(false) {}
+    SmartArray(bool flag, int a, Matrix &S) : flag(flag), a(a), S(S), flag_death(false) {}
 
     void rise_flag () {
-        flag_life = true;
+        flag_death= true;
     }
 
     void printArr() const;
     int& operator[] (int b);
     ~SmartArray();
-    SmartArray* &operator= (SmartArray* &sm);
+    SmartArray &operator= (SmartArray &sm);
 };
 
 void _swap (int& a, int& b) {
@@ -40,8 +40,7 @@ class Node {
 
     friend class List_SmartArrays;
 public:
-    Node(SmartArray *SmartArray_adress) {
-        next_node = nullptr;
+    Node(SmartArray *SmartArray_adress) : next_node(next_node) {
         this->SmartArray_adress = SmartArray_adress;
     }
 };
@@ -49,10 +48,7 @@ public:
 class List_SmartArrays {
     Node *head, *end;
 public:
-    List_SmartArrays() {
-        head = nullptr;
-        end = nullptr;
-    }
+    List_SmartArrays() : head(nullptr), end(nullptr) {}
 
     void append(SmartArray *SmartArray_adress) {
         Node *newN = new Node(SmartArray_adress);
@@ -124,7 +120,7 @@ class Matrix {
 public:
     Matrix() : n(0), A(nullptr), head(nullptr) {}
 
-    Matrix(int N) : n(N) {
+    Matrix(int N) : n(N), head(nullptr) {
         A = new int *[n];
         for (int i = 0; i < n; i++) {
             A[i] = new int [n];
@@ -154,7 +150,7 @@ public:
         return *this;
     };
 
-    Matrix(int N, int k) : n(N) {
+    Matrix(int N, int k) : n(N), head(nullptr) {
         matrix_allocate_memory ();
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
@@ -399,7 +395,7 @@ public:
 
 
 int& SmartArray:: operator [] (int b) {
-    if (!flag_life) {
+    if (!flag_death) {
         if (b > S.n) {
             throw "Я всего лишь машина откуда мне знать как это работает";
         }
@@ -409,20 +405,20 @@ int& SmartArray:: operator [] (int b) {
             return S.A[a][b];
         }
     } else {
-        throw "Ошибка";
+        throw "Матрица уже мертва";
     }
 }
 
-SmartArray* &SmartArray::operator= (SmartArray* &sm) {
-    if (!flag_life) {
+SmartArray &SmartArray::operator= (SmartArray &sm) {
+    if (!flag_death) {
         return sm;
     } else {
-        throw "Ошибка";
+        throw "Матрица уже мертва";
     }
 }
 
 void SmartArray:: printArr() const {
-    if (!flag_life) {
+    if (!flag_death) {
         if (!flag) {
             for (int i = 0; i < S.n; i++) {
                 cout << S.A[a][i] << ' ';
@@ -433,15 +429,15 @@ void SmartArray:: printArr() const {
             }
         }
     } else {
-        throw "Ошибка";
+        throw "Матрица уже мертва";
     }
 }
 
 SmartArray :: ~SmartArray() {
-    if (!flag_life) {
+    if (!flag_death) {
         S.get_head()->delete_(this);
     } else {
-        throw "Ошибка";
+        throw "Матрица уже мертва";
     }
 }
 
