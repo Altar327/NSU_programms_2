@@ -15,17 +15,17 @@ protected:
     int current_delay;
     int age;                   //Возраст
     int step;
-    int deltaForField;
+//    int deltaForField;
 public:
-    Animal (int step, int deltaForField) : age(0), step(step), current_delay(0) {
+    Animal (int step) : age(0), step(step), current_delay(0) {
         cin >> x;
         cin >> y;
         cin >> way;
         cin >> delay;
     }
 
-    Animal (int x, int y, int way, int delay, int step, int deltaForField) :
-            x(x), y(y), way(way), delay(delay), age(0), step(step), current_delay(0), deltaForField(deltaForField) {}
+    Animal (int x, int y, int way, int delay, int step) :
+            x(x), y(y), way(way), delay(delay), age(0), step(step), current_delay(0) {}
 
     void fixed (int N, int M) {
         if (x < 0) x = N + x;
@@ -75,10 +75,11 @@ public:
         return age;
     }
 
-    int get_deltaForField() {
-        return deltaForField;
-    }
+//    int get_deltaForField() {
+//        return deltaForField;
+//    }
 
+    virtual int deltaForField () = 0;
     virtual bool death () = 0;
     virtual Animal* multiply () = 0;
     virtual bool kus (Animal*) = 0;
@@ -87,9 +88,13 @@ public:
 
 class Rabbit : public Animal {
 public:
-    Rabbit () : Animal (1, 1) {}
+    Rabbit () : Animal (1) {}
 
-    Rabbit (int x, int y, int Way, int Delay) : Animal (x, y, Way, Delay, 1, 1) {}
+    Rabbit (int x, int y, int Way, int Delay) : Animal (x, y, Way, Delay, 1) {}
+
+    int deltaForField() {
+        return 1;
+    }
 
     Rabbit* multiply () {
         if (age == 5 || age == 10) {
@@ -103,8 +108,7 @@ public:
     }
 
    bool death() {
-        if (age == 10) return true;
-        else return false;
+        return (age == 10);
     }
 };
 
@@ -112,9 +116,13 @@ class Wolf : public Animal {
 protected:
     int satiety;                //Сытность
 public:
-    Wolf () : Animal(2, -1), satiety(0) {}
+    Wolf () : Animal(2), satiety(0) {}
 
-    Wolf (int x, int y, int Way, int Delay) : Animal(x, y, Way, Delay, 2, -1), satiety(0) {}
+    Wolf (int x, int y, int Way, int Delay) : Animal(x, y, Way, Delay, 2), satiety(0) {}
+
+    int deltaForField() {
+        return -1;
+    }
 
     Animal* multiply () {
         if (satiety >= 2) {;
@@ -124,7 +132,7 @@ public:
     }
 
     bool kus (Animal* ani) {
-        if (ani->getX() == x && ani->getY() == y && ani->get_deltaForField() == 1) {
+        if (ani->getX() == x && ani->getY() == y && ani->deltaForField() == 1) {
             satiety++;
             return true;
         } else return false;
@@ -157,26 +165,27 @@ private:
     int** field;
     Animal** Animals;
     int size_array_animal;
-    int number_rabbit;
-    int number_wolf;
-    int number_hyena;
+//    int number_rabbit;
+//    int number_wolf;
+//    int number_hyena;
+    int number_animal;
 
-    void check_population (int i, int delta) {
-        if (dynamic_cast<Rabbit *>(Animals[i])) {
-            number_rabbit += delta;
-        } else if (dynamic_cast<Wolf *>(Animals[i])) {
-            number_wolf += delta;
-        } else if (dynamic_cast<Hyena *>(Animals[i])) {
-            number_hyena += delta;
-        }
-    }
+//    void check_population (int i, int delta) {
+//        if (dynamic_cast<Rabbit *>(Animals[i])) {
+//            number_rabbit += delta;
+//        } else if (dynamic_cast<Wolf *>(Animals[i])) {
+//            number_wolf += delta;
+//        } else if (dynamic_cast<Hyena *>(Animals[i])) {
+//            number_hyena += delta;
+//        }
+//    }
 
-    int number_animal () {
-        return number_rabbit + number_wolf + number_hyena;
-    }
+//    int number_animal () {
+//        return number_rabbit + number_wolf + number_hyena;
+//    }
 
     void fixed_array_Animals (int n) {
-        for (int i = n; i < number_animal(); i++) {
+        for (int i = n; i < number_animal; i++) {
             Animals[i] = Animals[i + 1];
         }
     }
@@ -192,7 +201,7 @@ private:
     }
 
     void overexposure_memory () {
-        if (number_animal() >= size_array_animal) {
+        if (number_animal >= size_array_animal) {
             Animal** new_Animals = new Animal *[size_array_animal * 2];
             for (int i = 0; i < size_array_animal; i++) {
                 new_Animals[i] = Animals[i];
@@ -208,11 +217,17 @@ public:
         cin >> N;
         cin >> M;
         cin >> T;
+
+        int number_rabbit;
+        int number_wolf;
+        int number_hyena;
+
         cin >> number_rabbit;
         cin >> number_wolf;
         cin >> number_hyena;
 
-        size_array_animal = number_animal();
+        number_animal = number_rabbit + number_hyena + number_wolf;
+        size_array_animal = number_animal;
 
         allocate_memory();
 
@@ -221,7 +236,7 @@ public:
         for (; i < number_rabbit; i++) {
             Animals[i] = new Rabbit ();
         }
-        for (; i < number_animal(); i++) {
+        for (; i < number_animal; i++) {
             Animals[i] = new Wolf ();
         }
     }
@@ -241,7 +256,8 @@ public:
     }
 
     void death_Animal (int i) {
-        check_population(i, -1);
+        number_animal--;
+//        check_population(i, -1);
         delete Animals[i];
         fixed_array_Animals(i);
     }
@@ -261,14 +277,14 @@ public:
 //    }
 
     void turn () {
-        for (int i = 0; i < number_animal(); i++) {
+        for (int i = 0; i < number_animal; i++) {
             Animals[i]->moving(N, M);
             Animals[i]->change_delay();
         }
 
-        for (int i = 0; i < number_animal(); i++) {
-            if (Animals[i]->get_deltaForField() == -1) {
-                for (int j = 0; j < number_animal(); j++) {
+        for (int i = 0; i < number_animal; i++) {
+            if (Animals[i]->deltaForField() == -1) {
+                for (int j = 0; j < number_animal; j++) {
                     if (i != j) {
                         if (Animals[i]->kus(Animals[j])) {
                             death_Animal(j);
@@ -280,15 +296,16 @@ public:
             }
         }
 
-        for (int i = 0; i < number_animal(); i++) {         //Сказано, что старение происходит после питания
+        for (int i = 0; i < number_animal; i++) {         //Сказано, что старение происходит после питания
             Animals[i]->aging();
         }
 
-        for (int i = 0; i < number_animal(); i++) {
+        for (int i = 0; i < number_animal; i++) {
             overexposure_memory ();
-            Animals[number_animal()] = Animals[i]->multiply();
-            if (Animals[number_animal()]) {
-                check_population(number_animal(), 1);
+            Animals[number_animal] = Animals[i]->multiply();
+            if (Animals[number_animal]) {
+                number_animal++;
+//                check_population(number_animal, 1);
             }
             if (Animals[i]->death()) {
                 death_Animal(i);
@@ -302,10 +319,10 @@ public:
             }
         }
 
-        for (int g = 0; g < number_animal(); g++) {
-            if (Animals[g]->get_deltaForField() == 1) {
+        for (int g = 0; g < number_animal; g++) {
+            if (Animals[g]->deltaForField() == 1) {
                 field[Animals[g]->getX()][Animals[g]->getY()]++;
-            } else if (Animals[g]->get_deltaForField() == -1) {
+            } else if (Animals[g]->deltaForField() == -1) {
                 field[Animals[g]->getX()][Animals[g]->getY()]--;
             }
         }
@@ -319,7 +336,7 @@ public:
     }
 
     ~Simulation() {
-        for (int i = 0; i < number_animal(); i++) {
+        for (int i = 0; i < number_animal; i++) {
             delete Animals[i];
         }
         delete[] Animals;
