@@ -79,7 +79,7 @@ public:
 //        return deltaForField;
 //    }
 
-    virtual int deltaForField () = 0;
+    virtual bool definition_of_the_kindness_of_the_beast() = 0;
     virtual bool death () = 0;
     virtual Animal* multiply () = 0;
     virtual bool kus (Animal*) = 0;
@@ -92,8 +92,8 @@ public:
 
     Rabbit (int x, int y, int Way, int Delay) : Animal (x, y, Way, Delay, 1) {}
 
-    int deltaForField() {
-        return 1;
+    bool definition_of_the_kindness_of_the_beast() {
+        return true;
     }
 
     Rabbit* multiply () {
@@ -120,8 +120,8 @@ public:
 
     Wolf (int x, int y, int Way, int Delay) : Animal(x, y, Way, Delay, 2), satiety(0) {}
 
-    int deltaForField() {
-        return -1;
+    bool definition_of_the_kindness_of_the_beast() {
+        return false;
     }
 
     Animal* multiply () {
@@ -132,7 +132,7 @@ public:
     }
 
     bool kus (Animal* ani) {
-        if (ani->getX() == x && ani->getY() == y && ani->deltaForField() == 1) {
+        if (ani->getX() == x && ani->getY() == y && ani->definition_of_the_kindness_of_the_beast() == true) {
             satiety++;
             return true;
         } else return false;
@@ -283,7 +283,7 @@ public:
         }
 
         for (int i = 0; i < number_animal; i++) {
-            if (Animals[i]->deltaForField() == -1) {
+            if (Animals[i]->definition_of_the_kindness_of_the_beast() == false) {
                 for (int j = 0; j < number_animal; j++) {
                     if (i != j) {
                         if (Animals[i]->kus(Animals[j])) {
@@ -320,9 +320,9 @@ public:
         }
 
         for (int g = 0; g < number_animal; g++) {
-            if (Animals[g]->deltaForField() == 1) {
+            if (Animals[g]->definition_of_the_kindness_of_the_beast() == true) {
                 field[Animals[g]->getX()][Animals[g]->getY()]++;
-            } else if (Animals[g]->deltaForField() == -1) {
+            } else if (Animals[g]->definition_of_the_kindness_of_the_beast() == false) {
                 field[Animals[g]->getX()][Animals[g]->getY()]--;
             }
         }
