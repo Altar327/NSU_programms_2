@@ -1,7 +1,7 @@
-#include <iostream>
+//#include <iostream>
 #include <stdio.h>
 #include <iomanip>
-//#include "Matrix.cpp"
+#include "Matrix.h"
 
 using namespace std;
 
@@ -97,11 +97,34 @@ public:
         }
     }
 
+//    bool del_all_elem_from_list(K key) {
+//        if (key == head->data->get_key()) {
+//            Elem<K, V> *temp = head->next;
+//            delete head;
+//            head = temp;
+//            return true;
+//        } else {
+//            Elem<K, V> *previous_elem = nullptr;
+//            Elem<K, V> *current_elem = head;
+//            while (current_elem != nullptr and current_elem->data->get_key() != key) {
+//                previous_elem = current_elem;
+//                current_elem = current_elem->next;
+//            }
+//            if (current_elem == nullptr)
+//                return false;
+//
+//            Elem<K, V> *temp = current_elem->next;
+//            delete current_elem;
+//
+//            previous_elem->next = temp;
+//            return true;
+//        }
+//    }
 };
 
 template <typename K, typename V>
 class HashMap {
-private:
+protected:
     List<K, V>** table;
     int size;
     int filled_size;
@@ -133,7 +156,6 @@ private:
             number_unique_elem++;
         }
         if (table[i]->get_head()->next != nullptr) {
-//            if (number_unique_elem == 0 && filled_size != 0) number_unique_elem++;
             helper_iterator(i, number_unique_elem,
                             table[i]->get_head()->next->data-> get_value(),
                             table[i]->get_head()->next->data->get_key());
@@ -156,6 +178,25 @@ public:
     size_t get_hash(K key) {
         std::hash<K> hash;
         return hash(key) % size;
+    }
+
+    size_t get_hash(Matrix M) {
+        std::hash<K> hash;
+
+        //Код взят из 2-го семестра... не судите строго... пришлось пойти на жертвы....
+        int set_Col[M.get_n()];                         //Массив с "пометками", какую строку мы вычеркиваем
+        for (int i = 0; i < M.get_n(); i++) {
+            set_Col[i] = 1;
+        }
+        return hash(M.det(set_Col, 0, M.get_n()));
+    }
+
+    List<K, V>** get_table () {
+        return table;
+    }
+
+    int get_size () {
+        return size;
     }
 
     void remove_elem (K key) {
@@ -204,31 +245,163 @@ public:
         }
     }
 
-    void iterator_print () {
-        for (int i = 0; i < size; i++) {
-            if (table[i]->get_head() != nullptr) {
-                cout << table[i]->get_head();
+    class Iterator {
+        int index;
+        Elem<K, V>* current_elem;
+        HashMap<K, V> *map;
+    public:
+        Iterator() : index(0), current_elem(nullptr), map(nullptr) {}
+
+        Iterator(int index, Elem<K, V> *currentElem, HashMap<K, V> *mp) : index(index), current_elem(currentElem), map(mp) {}
+
+        Pair<K, V> *operator->() {
+            return current_elem->data;
+        }
+
+        Elem<K, V> operator*() {
+            return *current_elem;
+        }
+
+        int get_index () {
+            return index;
+        }
+
+        Iterator operator ++ () {
+            if (current_elem->next != nullptr) {
+                current_elem = current_elem->next;
+            } else {
+                index++;
+                while (map->size > index && map->get_table()[index]->get_head() == nullptr) {
+                    index++;
+                }
+                if (map->size <= index)
+                    *this = Iterator();
+                else
+                    current_elem = map->get_table()[index]->get_head();
             }
+            return *this;
+        }
+
+        bool operator != (Iterator iterator) {
+            return current_elem != iterator.current_elem;
+        }
+    };
+
+    Iterator begin() {
+        int index = 0;
+        while (this->get_table()[index]->get_head() == nullptr) {
+            index++;
+        }
+        return Iterator(index, this->get_table()[index]->get_head(), this);
+    }
+
+    Iterator end() {
+        return Iterator();
+    }
+
+    Elem<K, V>* get_end () {
+        int i = 0;
+        Elem<K, V>* current_elem = table[size - 1]->get_head();
+        while (table[size - i] == nullptr) {
+            i++;
+        }
+        while (current_elem->next != nullptr) {
+            current_elem = current_elem->next;
+        }
+        return current_elem;
+    }
+
+    void print_all_elem () {
+        for (Iterator iter(this); iter.get_elem() != get_end(); ++iter) {
+            cout << iter.get_elem();
         }
     }
-    
-    int iterator_counting_unique_elem() {
+
+    int counting_unique_elem() {
         int number_unique_elem = 0;
-        for (int i = 0; i < size; i++) {
-            if (table[i]->get_head() != nullptr) {
-                helper_iterator (i, number_unique_elem,
-                                 table[i]->get_head()->data->get_value(),
-                                 table[i]->get_head()->data->get_key());
-            }
-//            if (number_unique_elem == 0 && filled_size != 0) number_unique_elem++;
+//        for (Iterator iter(this); iter.get_elem() != get_end(); iter++) {
+        for (Iterator iter = this->begin();  iter != this->end(); ++iter) {
+            bool exist = true;
+            for(Iterator iter2 = this->begin();  iter2 != iter; ++iter2)
+                if(iter->get_value() == iter2->get_value()) {
+                    exist = false;
+                    break;
+                }
+            if (exist)
+                number_unique_elem++;
         }
+//        for (Elem<K, V> elem: *this) {
+//            helper_iterator (elem., number_unique_elem,
+//                                 iter.get_elem()->data->get_value(),
+//                                 iter.get_elem()->data->get_key());
+//        }
         return number_unique_elem;
     }
 
+//    int counting_unique_elem() {
+//        int number_unique_elem = 0;
+//        for (int i = 0; i < size; i++) {
+//            if (table[i]->get_head() != nullptr) {
+//                helper_iterator (i, number_unique_elem,
+//                                 table[i]->get_head()->data->get_value(),
+//                                 table[i]->get_head()->data->get_key());
+//            }
+//        }
+//        return number_unique_elem;
+//    }
+
     void print_count_elem () {
-        cout << filled_size << ' ' << iterator_counting_unique_elem();
+        cout << filled_size << ' ' << counting_unique_elem();
     }
 };
+
+
+template <typename K, typename V>
+class MultiHashMap : public HashMap<K, V> {
+protected:
+    friend class List<K, V>;
+public:
+    MultiHashMap() : HashMap<K, V>() {}
+
+    MultiHashMap (int size) : HashMap<K, V>(size) {}
+
+    size_t get_hash(K key) {
+        std::hash<K> hash;
+        return hash(key) % size;
+    }
+
+    size_t get_hash(Matrix M) {
+        std::hash<K> hash;
+
+        //Код взят из 2-го семестра... не судите строго... пришлось пойти на жертвы....
+        int set_Col[M.get_n()];                         //Массив с "пометками", какую строку мы вычеркиваем
+        for (int i = 0; i < M.get_n(); i++) {
+            set_Col[i] = 1;
+        }
+        return hash(M.det(set_Col, 0, M.get_n()));
+    }
+
+    List<K, V> getting_elem_with_unique_key (K current_key) {
+        List<K, V> copy_list = List<K, V>();
+        for (typename HashMap<K, V>::Iterator iter = this->begin();  iter != this->end(); ++iter) {
+            if (iter.get_elem()->data->get_key() == current_key) {
+                copy_list.add_head(iter.get_elem()->data->get_key(), iter.get_elem()->data->get_value());
+            }
+        }
+        return copy_list;
+    }
+
+    int counting_elem_with_current_key (K current_key) {
+        int count = 0;
+        for (typename HashMap<K, V>::Iterator iter = this->begin();  iter != this->end(); ++iter) {
+            if (iter.get_elem()->data->get_key() == current_key) {
+                count++;
+            }
+        }
+        return count;
+    }
+};
+
 
 template <typename K, typename V>
 void map () {
@@ -252,10 +425,9 @@ void map () {
         }
     }
 
-//    hash_map.iterator_print();
+//    hash_map.print();
     hash_map.print_count_elem();
 }
-
 
 int main() {
     char ch_key, ch_data;

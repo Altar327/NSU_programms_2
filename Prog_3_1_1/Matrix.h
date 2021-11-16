@@ -1,6 +1,5 @@
 #include <iostream>
-#include <stdio.h>
-#include <iomanip>
+#include <math.h>
 
 using namespace std;
 
@@ -174,6 +173,8 @@ public:
     List_SmartArrays* get_head() const {
         return head;
     }
+
+
 
 //    void print_matrix() const {
 //        for (int i = 0; i < n; i++) {
@@ -390,6 +391,26 @@ public:
         }
         return false;
     }
+
+    int det (int set_Col[], int start_Row, int minor_rank) {                //Рекурсивная функция на нахождениие определиеля
+        int x = 0;
+        int minus_one_score = 0;
+        for (int i = 0; i < n; i++) {
+            if (set_Col[i]) {
+                if (minor_rank == 1) {
+                    return (*this)[start_Row][i];
+                } else {
+                    start_Row++;
+                    set_Col[i]--;
+                    x += pow((-1),minus_one_score) * (*this)[start_Row - 1][i]*det(set_Col, start_Row, minor_rank - 1);
+                    set_Col[i]++;
+                    minus_one_score++;
+                    start_Row--;
+                }
+            }
+        }
+        return x;
+    }
 };
 
 
@@ -428,7 +449,7 @@ void SmartArray:: printArr() const {
             }
         }
     } else {
-        throw "Матрица уже мертва";
+        throw "Matrix is dead";
     }
 }
 
@@ -436,6 +457,6 @@ SmartArray :: ~SmartArray() {
     if (!flag_death) {
         S.get_head()->delete_(this);
     } else {
-        throw "Матрица уже мертва";
+        throw "Matrix is dead";
     }
 }
