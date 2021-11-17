@@ -97,29 +97,29 @@ public:
         }
     }
 
-//    bool del_all_elem_from_list(K key) {
-//        if (key == head->data->get_key()) {
-//            Elem<K, V> *temp = head->next;
-//            delete head;
-//            head = temp;
-//            return true;
-//        } else {
-//            Elem<K, V> *previous_elem = nullptr;
-//            Elem<K, V> *current_elem = head;
-//            while (current_elem != nullptr and current_elem->data->get_key() != key) {
-//                previous_elem = current_elem;
-//                current_elem = current_elem->next;
-//            }
-//            if (current_elem == nullptr)
-//                return false;
-//
-//            Elem<K, V> *temp = current_elem->next;
-//            delete current_elem;
-//
-//            previous_elem->next = temp;
-//            return true;
-//        }
-//    }
+    bool del_all_elem_from_list(K key) {
+        if (key == head->data->get_key()) {
+            Elem<K, V> *temp = head->next;
+            delete head;
+            head = temp;
+            return true;
+        } else {
+            Elem<K, V> *previous_elem = nullptr;
+            Elem<K, V> *current_elem = head;
+            while (current_elem != nullptr and current_elem->data->get_key() != key) {
+                previous_elem = current_elem;
+                current_elem = current_elem->next;
+            }
+            if (current_elem == nullptr)
+                return false;
+
+            Elem<K, V> *temp = current_elem->next;
+            delete current_elem;
+
+            previous_elem->next = temp;
+            return true;
+        }
+    }
 };
 
 template <typename K, typename V>
@@ -365,9 +365,30 @@ public:
 
     MultiHashMap (int size) : HashMap<K, V>(size) {}
 
+    void remove_elem (K key) {
+        if (this->table[get_hash(key)]->get_head() != nullptr) {
+            if (this->table[get_hash(key)]->del_all_elem_from_list(key)) {
+                this->filled_size--;
+            }
+        }
+    }
+
+    void add_elem (K key, V value) {
+        if (this->table[get_hash(key)]->get_head() == nullptr) {          //Добовление в таблицу, если коллизии нет
+            this->table[get_hash(key)]->add_head(key, value);
+            this->filled_size++;
+            this->re_hash();
+        } else {                                                       //Добовление, если произошла коллизия
+            this->table[get_hash(key)]->add_head(key, value);
+            this->filled_size++;
+            this->re_hash();
+        }
+    }
+
+
     size_t get_hash(K key) {
         std::hash<K> hash;
-        return hash(key) % size;
+        return hash(key) % this->size;
     }
 
     size_t get_hash(Matrix M) {
@@ -378,7 +399,7 @@ public:
         for (int i = 0; i < M.get_n(); i++) {
             set_Col[i] = 1;
         }
-        return hash(M.det(set_Col, 0, M.get_n()));
+        return get_hash(M.det(set_Col, 0, M.get_n()));
     }
 
     List<K, V> getting_elem_with_unique_key (K current_key) {
@@ -405,7 +426,8 @@ public:
 
 template <typename K, typename V>
 void map () {
-    HashMap<K, V> hash_map;
+    MultiHashMap<K, V> hash_map;
+//    HashMap<K, V> hash_map;
     int count_command;
 
     cin >> count_command;
