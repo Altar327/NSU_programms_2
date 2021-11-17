@@ -367,7 +367,7 @@ public:
 
     void remove_elem (K key) {
         if (this->table[get_hash(key)]->get_head() != nullptr) {
-            if (this->table[get_hash(key)]->del_all_elem_from_list(key)) {
+            while (this->table[get_hash(key)]->del_all_elem_from_list(key)) {
                 this->filled_size--;
             }
         }
