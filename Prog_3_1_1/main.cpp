@@ -47,6 +47,16 @@ struct Elem {
         }
         return os;
     }
+
+    bool check_list_on_collision (K key) {
+        if (key == data->get_key()) {
+            return true;
+        } else if (next != nullptr) {
+            return next->check_list_on_collision(key);
+        } else {
+            return false;
+        }
+    }
 };
 
 template <typename K, typename V>
@@ -75,29 +85,7 @@ public:
         head = e;
     }
 
-    void del_from_list(K key) {
-        if (key == head->data->get_key()) {
-            Elem<K, V> *temp = head->next;
-            delete head;
-            head = temp;
-        } else {
-            Elem<K, V> *previous_elem = nullptr;
-            Elem<K, V> *current_elem = head;
-            while (current_elem != nullptr and current_elem->data->get_key() != key) {
-                previous_elem = current_elem;
-                current_elem = current_elem->next;
-            }
-            if (current_elem == nullptr)
-                return;
-
-            Elem<K, V> *temp = current_elem->next;
-            delete current_elem;
-
-            previous_elem->next = temp;
-        }
-    }
-
-    bool del_all_elem_from_list(K key) {
+    bool del_from_list(K key) {
         if (key == head->data->get_key()) {
             Elem<K, V> *temp = head->next;
             delete head;
@@ -120,6 +108,34 @@ public:
             return true;
         }
     }
+
+    bool del_all_elem_from_list(K key) {
+        if (head != nullptr) {
+            if (key == head->data->get_key()) {
+                Elem<K, V> *temp = head->next;
+                delete head;
+                head = temp;
+                return true;
+            } else {
+                Elem<K, V> *previous_elem = nullptr;
+                Elem<K, V> *current_elem = head;
+                while (current_elem != nullptr and current_elem->data->get_key() != key) {
+                    previous_elem = current_elem;
+                    current_elem = current_elem->next;
+                }
+                if (current_elem == nullptr)
+                    return false;
+
+                Elem<K, V> *temp = current_elem->next;
+                delete current_elem;
+
+                previous_elem->next = temp;
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
 };
 
 template <typename K, typename V>
@@ -128,6 +144,7 @@ protected:
     List<K, V>** table;
     int size;
     int filled_size;
+    double flag_for_re_hash;
 
     void allocate_memory () {
         table = new List<K, V>* [size];
@@ -140,7 +157,7 @@ protected:
         for (int i = 0; i < size; i++) {
             delete table[i];
         }
-        delete table;
+        delete[] table;
     }
 
     void helper_iterator (int i, int& number_unique_elem, V current_value, K current_key) {
@@ -161,13 +178,12 @@ protected:
                             table[i]->get_head()->next->data->get_key());
         }
     }
-
 public:
-    HashMap() : size(100), filled_size(0) {
+    HashMap() : size(100), filled_size(0), flag_for_re_hash(0.6) {
         allocate_memory();
     }
 
-    HashMap (int size) : size(size), filled_size(0) {
+    HashMap (int size, double flag_for_re_hash) : size(size), filled_size(0), flag_for_re_hash(flag_for_re_hash) {
         allocate_memory();
     }
 
@@ -199,10 +215,15 @@ public:
         return size;
     }
 
+    Pair<K,  V> get_elem (K  key) {
+        return table[get_hash(key)]->get_head()->data;
+    }
+
     void remove_elem (K key) {
         if (table[get_hash(key)]->get_head() != nullptr) {
-            table[get_hash(key)]->del_from_list(key);
-            filled_size--;
+            if (table[get_hash(key)]->del_from_list(key)) {
+                filled_size--;
+            }
         }
     }
 
@@ -211,7 +232,7 @@ public:
             table[get_hash(key)]->add_head(key, value);
             filled_size++;
             re_hash();
-        } else if (table[get_hash(key)]->get_head()->data->get_key() == key) {          //Изменение значения
+        } else if (table[get_hash(key)]->get_head()->check_list_on_collision(key)) {          //Изменение значения
             remove_elem(key);
             filled_size++;
             table[get_hash(key)]->add_head(key, value);
@@ -223,20 +244,18 @@ public:
     }
 
     void re_hash () {
-        if (filled_size > (double)(size * 0.6)) {
+        if (filled_size > (double)(size * flag_for_re_hash)) {
             List<K, V> **new_table;
             new_table = new List<K, V> *[size * 2];
             for (int i = 0; i < size * 2; i++) {
                 new_table[i] = new List<K, V>;
             }
 
-            for (int i = 0; i < size; i++) {
-                if (table[i]->get_head() != nullptr) {
-                    K current_key = table[i]->get_head()->data->get_key();
-                    V current_value = table[i]->get_head()->data->get_value();
-                    new_table[get_hash(current_key)]->add_head(current_key, current_value);
-                    table[i]->del_from_list(current_key);
-                }
+            for (Iterator iter = this->begin();  iter != this->end(); ++iter) {
+                K current_key = table[iter.get_index()]->get_head()->data->get_key();
+                V current_value = table[iter.get_index()]->get_head()->data->get_value();
+                new_table[get_hash(current_key)]->add_head(current_key, current_value);
+                table[iter.get_index()]->del_from_list(current_key);
             }
             size *= 2;
 
@@ -299,20 +318,8 @@ public:
         return Iterator();
     }
 
-    Elem<K, V>* get_end () {
-        int i = 0;
-        Elem<K, V>* current_elem = table[size - 1]->get_head();
-        while (table[size - i] == nullptr) {
-            i++;
-        }
-        while (current_elem->next != nullptr) {
-            current_elem = current_elem->next;
-        }
-        return current_elem;
-    }
-
     void print_all_elem () {
-        for (Iterator iter(this); iter.get_elem() != get_end(); ++iter) {
+        for (Iterator iter = this->begin();  iter != this->end(); ++iter) {
             cout << iter.get_elem();
         }
     }
