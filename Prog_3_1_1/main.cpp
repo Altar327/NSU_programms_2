@@ -49,13 +49,26 @@ struct Elem {
     }
 
     bool check_list_on_collision (K key) {
-        if (key == data->get_key()) {
+
+//        if (key == data->get_key()) {
+//            return true;
+//        } else if (next != nullptr) {
+//            return next->check_list_on_collision(key);
+//        } else {
+//            return false;
+//        }
+
+        Elem<K, V>* current_node = this;
+        if (key == current_node->data->get_key()) {
             return true;
-        } else if (next != nullptr) {
-            return next->check_list_on_collision(key);
-        } else {
-            return false;
         }
+        while (current_node->next != nullptr) {
+            if (key == current_node->data->get_key()) {
+                return true;
+            }
+            current_node = current_node->next;
+        }
+        return false;
     }
 };
 
@@ -381,15 +394,9 @@ public:
     }
 
     void add_elem (K key, V value) {
-        if (this->table[get_hash(key)]->get_head() == nullptr) {          //Добовление в таблицу, если коллизии нет
             this->table[get_hash(key)]->add_head(key, value);
             this->filled_size++;
             this->re_hash();
-        } else {                                                       //Добовление, если произошла коллизия
-            this->table[get_hash(key)]->add_head(key, value);
-            this->filled_size++;
-            this->re_hash();
-        }
     }
 
 
