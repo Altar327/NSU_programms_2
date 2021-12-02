@@ -1,0 +1,3 @@
+D:\CLion\bin\cmake\win\bin\cmake.exe -E rm -f CMakeFiles\Interpretation.dir/objects.a
+C:\MinGW\bin\ar.exe cr CMakeFiles\Interpretation.dir/objects.a @CMakeFiles\Interpretation.dir\objects1.rsp
+C:\MinGW\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\Interpretation.dir/objects.a -Wl,--no-whole-archive -o Interpretation.exe -Wl,--out-implib,libInterpretation.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\Interpretation.dir\linklibs.rsp
