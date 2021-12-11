@@ -474,6 +474,7 @@ public:
     Expression* interpretation() {
         Expression* exp = interpretation_expression();
         exp->eval()->print();
+        delete exp;
     }
 };
 
