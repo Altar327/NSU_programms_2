@@ -18,12 +18,6 @@ const char closing_bracket = ')';
 const char assign = '=';
 const char mins = '-';
 
-vector<std::string> keywords = {
-        "val", "var", "add", "if", "then",
-        "else", "let", "in", "function",
-        "call"
-};
-
 class Env;
 
 class Expression {
@@ -37,6 +31,7 @@ public:
         return map;
     }
 
+    virtual int get_val () = 0;
     virtual void print () = 0;
     virtual Expression* eval () = 0;         //Функция обработки "команды"
 };
@@ -68,8 +63,12 @@ public:
         hash_map = env->hash_map;
     }
 
-    void create_variable (string key, Expression* value) {
-        hash_map.insert({key, value});
+    unordered_map<string, Expression*> get_map() {
+        return hash_map;
+    }
+
+    void updata_map(unordered_map<string, Expression*> new_map) {
+        hash_map = new_map;
     }
 
     Expression* from_env(string id) {
@@ -79,14 +78,6 @@ public:
             throw "ERROR";
         }
     }
-
-//    void update_val (string id, Expression* new_value) {
-//        if (hash_map[id] != nullptr) {
-//            hash_map[id] = new_value;
-//        } else {
-//            throw "ERROR";
-//        }
-//    }
 
     void create_variable_or_update_val (string id, Expression* new_value) {
             hash_map.insert({id, new_value});
@@ -119,6 +110,10 @@ public:
         return map->from_env(id);
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
 };
 
 class Add : public Expression {
@@ -137,6 +132,10 @@ public:
 
     Expression* eval() {
         return new Val(this->map->get_value(e1->eval()) + this->map->get_value(e2->eval()), map);
+    }
+
+    int get_val () {
+        throw "ERROR";
     }
 
     ~Add () {
@@ -174,6 +173,10 @@ public:
         cout << ")";
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
     ~Exp_if () {
         delete val_1;
         delete val_2;
@@ -190,7 +193,8 @@ public:
     Let (string id, Expression* value, Expression* exp_body, Env* map) : Expression(map), id(id), value(value), exp_body(exp_body) {}
 
     Expression* eval() {
-        this->map->create_variable(id, value->eval());
+        this->map->create_variable_or_update_val(id, value->eval());
+        exp_body->get_map()->updata_map(this->map->get_map());
         return exp_body->eval();
     }
 
@@ -202,6 +206,10 @@ public:
         cout << ")";
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
     ~Let () {
         delete value;
         delete exp_body;
@@ -211,10 +219,12 @@ public:
 class Function : public Expression {
     string id;
     Expression* body_func;
+    Env* start_map;
 public:
-    Function (string id, Expression* body_func, Env* map) : Expression(map), id(id), body_func(body_func) {}
+    Function (string id, Expression* body_func, Env* start_map, Env* map) : Expression(map), id(id), body_func(body_func), start_map(start_map) {}
 
     Expression* eval() {
+        this->map->updata_map(start_map->get_map());
         return this;
     }
 
@@ -232,6 +242,10 @@ public:
         cout << ")";
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
     ~Function() {
         delete body_func;
     }
@@ -241,16 +255,18 @@ class Call : public Expression {
     Expression* f_expr;
     Expression* arg_expr;
 public:
-    Call (Expression* f_expr, Expression* arg_expr, Env* map) : Expression(map), f_expr(f_expr), arg_expr(arg_expr) {
+    Call (Expression* f_expr, Expression* arg_expr, Env* map) : Expression(map), f_expr(f_expr), arg_expr(arg_expr) {}
+
+    Expression* eval() {
         if (!dynamic_cast<Function*>(f_expr->eval())) {
             throw "ERROR";
         }
-    }
 
-    Expression* eval() {
         ((Function*)f_expr->eval())->get_map()->create_variable_or_update_val(((Function*)f_expr->eval())->get_id(), arg_expr->eval());
         ((Function*)f_expr->eval())->get_map()->create_variable_or_update_val(((Var*)f_expr)->get_id(), f_expr->eval());
-        return new Val(((Function*)f_expr->eval())->get_map()->get_value(((Function*)f_expr->eval())->get_body_func()->eval()), map);
+        Expression* exp = (Expression *) (((Function*)f_expr->eval())->get_body_func()->eval());
+//        return new Val(((Function*)f_expr->eval())->get_map()->get_value(((Function*)f_expr->eval())->get_body_func()->eval()), map);
+        return exp;
     }
 
     void print () {
@@ -259,6 +275,10 @@ public:
         cout << " ";
         arg_expr->print();
         cout << ")";
+    }
+
+    int get_val () {
+        throw "ERROR";
     }
 
     ~Call () {
@@ -284,6 +304,10 @@ public:
         return this;
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
     ~Set () {
         delete exp;
     }
@@ -305,10 +329,14 @@ public:
     }
 
     Expression* eval () {
-        for (auto &elem: vec) {
-            elem->eval();
+        for (int i = 0; i < vec.size() - 1; i++) {
+            vec[i]->eval();
         }
         return vec.back()->eval();
+    }
+
+    int get_val () {
+        throw "ERROR";
     }
 
     ~Block () {
@@ -344,6 +372,10 @@ protected:
     }
 
     Let* interpretation_Let() {
+        Env* env_map_current = new Env();
+        Env* env_map_copy = env_map;
+        env_map = env_map_current;
+
         //Считываем имя переменной
         string id;
         code >> id;
@@ -363,10 +395,10 @@ protected:
         }
         //Считываем expression в который мы подставляем значение той переменной, которую мы уже считали
         Expression* exp_body = interpretation_expression();
-        if (check_closing_bracket()) {
-
-        };
-        return new Let(id, exp_value, exp_body, env_map);
+        check_closing_bracket();
+        Let* exp = new Let(id, exp_value, exp_body, env_map);
+        env_map = env_map_copy;
+        return exp;
     }
 
     Var* interpretation_Var() {
@@ -399,15 +431,15 @@ protected:
         return new Exp_if(val_1, val_2, exp_true, exp_false, env_map);
     }
     Function* interpretation_Function() {
-        Env* env_map_current = new Env(env_map);
+        Env* env_map_current = new Env();
         Env* env_map_copy = env_map;
         env_map = env_map_current;
+
         string id;
         code >> id;
-//        Expression* value = interpretation_expression();
         Expression* body_func = interpretation_expression();
         check_closing_bracket();
-        Function* func = new Function(id, body_func, env_map);
+        Function* func = new Function(id, body_func, env_map_copy, env_map);
         env_map = env_map_copy;
         return func;
     }
@@ -478,6 +510,7 @@ public:
     Expression* interpretation() {
         Expression* exp = interpretation_expression();
         exp->eval()->print();
+        delete exp;
     }
 };
 
