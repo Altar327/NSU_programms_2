@@ -202,10 +202,12 @@ public:
 class Function : public Expression {
     string id;
     Expression* body_func;
+    Env* start_map;
 public:
-    Function (string id, Expression* body_func, Env* map) : Expression(map), id(id), body_func(body_func) {}
+    Function (string id, Expression* body_func, Env* start_map, Env* map) : Expression(map), id(id), body_func(body_func), start_map(start_map) {}
 
     Expression* eval() {
+        this->map->updata_map(start_map->get_map());
         return this;
     }
 
@@ -238,6 +240,7 @@ public:
         if (!dynamic_cast<Function*>(f_expr->eval())) {
             throw "ERROR";
         }
+
         ((Function*)f_expr->eval())->get_map()->create_variable_or_update_val(((Function*)f_expr->eval())->get_id(), arg_expr->eval());
         ((Function*)f_expr->eval())->get_map()->create_variable_or_update_val(((Var*)f_expr)->get_id(), f_expr->eval());
         Expression* exp = (Expression *) (((Function*)f_expr->eval())->get_body_func()->eval());
@@ -336,7 +339,7 @@ protected:
     }
 
     Let* interpretation_Let() {
-        Env* env_map_current = new Env(env_map);
+        Env* env_map_current = new Env();
         Env* env_map_copy = env_map;
         env_map = env_map_current;
 
@@ -395,7 +398,7 @@ protected:
         return new Exp_if(val_1, val_2, exp_true, exp_false, env_map);
     }
     Function* interpretation_Function() {
-        Env* env_map_current = new Env(env_map);
+        Env* env_map_current = new Env();
         Env* env_map_copy = env_map;
         env_map = env_map_current;
 
@@ -403,7 +406,7 @@ protected:
         code >> id;
         Expression* body_func = interpretation_expression();
         check_closing_bracket();
-        Function* func = new Function(id, body_func, env_map);
+        Function* func = new Function(id, body_func, env_map_copy, env_map);
         env_map = env_map_copy;
         return func;
     }
