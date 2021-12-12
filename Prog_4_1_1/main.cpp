@@ -31,6 +31,7 @@ public:
         return map;
     }
 
+    virtual int get_val () = 0;
     virtual void print () = 0;
     virtual Expression* eval () = 0;         //Функция обработки "команды"
 };
@@ -109,6 +110,10 @@ public:
         return map->from_env(id);
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
 };
 
 class Add : public Expression {
@@ -127,6 +132,10 @@ public:
 
     Expression* eval() {
         return new Val(this->map->get_value(e1->eval()) + this->map->get_value(e2->eval()), map);
+    }
+
+    int get_val () {
+        throw "ERROR";
     }
 
     ~Add () {
@@ -164,6 +173,10 @@ public:
         cout << ")";
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
     ~Exp_if () {
         delete val_1;
         delete val_2;
@@ -191,6 +204,10 @@ public:
         cout << " in ";
         exp_body->print();
         cout << ")";
+    }
+
+    int get_val () {
+        throw "ERROR";
     }
 
     ~Let () {
@@ -225,6 +242,10 @@ public:
         cout << ")";
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
     ~Function() {
         delete body_func;
     }
@@ -256,6 +277,10 @@ public:
         cout << ")";
     }
 
+    int get_val () {
+        throw "ERROR";
+    }
+
     ~Call () {
         delete f_expr;
         delete arg_expr;
@@ -277,6 +302,10 @@ public:
     Expression* eval () {
         this->map->create_variable_or_update_val(id, exp);
         return this;
+    }
+
+    int get_val () {
+        throw "ERROR";
     }
 
     ~Set () {
@@ -304,6 +333,10 @@ public:
             vec[i]->eval();
         }
         return vec.back()->eval();
+    }
+
+    int get_val () {
+        throw "ERROR";
     }
 
     ~Block () {
