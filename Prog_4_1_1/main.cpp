@@ -27,9 +27,10 @@ protected:
 public:
 //    Expression (Env* map) : map(map) {}
     Expression () {}
-//    Env* get_map() {
-//        return map;
-//    }
+
+    virtual Env* get_start_map() {
+        throw "ERROR";
+    }
 
     virtual int get_val () {
         throw "ERROR";
@@ -198,7 +199,9 @@ public:
         Env* new_map = new Env();
         new_map->updata_map(map->get_map());
         new_map->create_variable_or_update_val(id, value->eval(map));
-        return exp_body->eval(new_map);
+        Expression* temp = exp_body->eval(new_map);
+        delete new_map;
+        return temp;
     }
 
     void print () {
@@ -219,12 +222,20 @@ class Function : public Expression {
     string id;
     Expression* body_func;
     Env* env_map;
+    int score_eval;
 public:
-    Function (string id, Expression* body_func, Env* env_map) : id(id), body_func(body_func), env_map(env_map) {}
+    Function (string id, Expression* body_func, Env* env_map) : id(id), body_func(body_func), env_map(env_map), score_eval(0) {}
 
     Expression* eval(Env* map) {
-//        map->updata_map(start_map->get_map());
+        if (!score_eval) {
+            env_map->updata_map(map->get_map());
+            score_eval++;
+        }
         return this;
+    }
+
+    Env* get_start_map () {
+        return env_map;
     }
 
     string get_id () {
@@ -258,10 +269,12 @@ public:
             throw "ERROR";
         }
 
-        map->create_variable_or_update_val(temp->get_id(), arg_expr->eval(map));
-        map->create_variable_or_update_val(f_expr->get_id(), temp);
-        Expression* exp = temp->get_body_func()->eval(map);
-//        return new Val(((Function*)f_expr->eval())->get_map()->get_value(((Function*)f_expr->eval())->get_body_func()->eval()), map);
+        Env* new_map = new Env();
+        new_map->updata_map(temp->get_start_map()->get_map());
+        new_map->create_variable_or_update_val(temp->get_id(), arg_expr->eval(map));
+        new_map->create_variable_or_update_val(f_expr->get_id(), temp);
+        Expression* exp = temp->get_body_func()->eval(new_map);
+        delete new_map;
         return exp;
     }
 
@@ -495,6 +508,7 @@ public:
     Expression* interpretation() {
         Expression* exp = interpretation_expression();
         exp->eval(env_map)->print();
+        delete env_map;
         delete exp;
     }
 };
