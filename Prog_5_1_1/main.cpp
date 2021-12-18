@@ -20,25 +20,26 @@ mutex mut;
 condition_variable cond_var;
 vector<string> all_pages;
 vector<thread> all_thread;
-atomic_bool flag = true;
-atomic_int score_pages = 0;
+//atomic_bool flag = true;
+//atomic_int score_pages = 0;
 
 void create_new_site(string &address, string &content) {
     ofstream new_page_site;
-    new_page_site.open("./input/" + address + ".html");
+    new_page_site.open("./output/" + address + ".html");
     new_page_site << content;
     new_page_site.close();
 }
 
-void new_Thread(vector<string> &all_pages, queue<string> &queue) {
+void new_Thread() {
     while (!que.empty()) {
-        unique_lock<mutex> lock(mut);
+        unique_lock<mutex> lock(mut, defer_lock);
         cond_var.wait(lock, []() -> bool { return !que.empty(); });
 
-        string address = queue.front();
-        queue.pop();
-        score_pages++;
-        mut.unlock();
+        lock.lock();
+        string address = que.front();
+        que.pop();
+//        score_pages++;
+        lock.unlock();
 
         ifstream read("./test_data/" + address + ".html");
         string content;
@@ -55,15 +56,16 @@ void new_Thread(vector<string> &all_pages, queue<string> &queue) {
             pos1 = content.find("://") + 3;
             string address_new_pade = content.substr(pos1, pos2 - pos1);
             content = content.substr(pos1, content.size() - pos1);
+            lock.lock();
             if (find(all_pages.begin(), all_pages.end(), address_new_pade) == all_pages.end()) {
-                mut.lock();
                 all_pages.push_back(address_new_pade);
-                queue.push(address_new_pade);
-                cond_var.notify_all();
-                mut.unlock();
+                que.push(address_new_pade);
+//                cond_var.notify_all();
             }
+            lock.unlock();
             pos1 = content.find("<a href=\"");
         }
+        cond_var.notify_one();
     }
 };
 
@@ -71,17 +73,19 @@ int main() {
     clock_t start, finish;
     string start_address;
     int count_thread;
-    cin >> start_address >> count_thread;
+    ifstream read("input.txt");
+    read >> start_address >> count_thread;
 //    for (int count_thread = 1; count_thread < 500; count_thread++) {
     start = clock();
     que.push(start_address);
     all_pages.push_back(start_address);
     for (int i = 0; i < count_thread; i++) {
-        all_thread.push_back(thread(new_Thread, ref(all_pages), ref(que)));
+        all_thread.push_back(thread(new_Thread));
     }
+    cond_var.notify_one();
 
     while (!que.empty()) {
-        cond_var.notify_all();
+        //cond_var.notify_all();
     }
 
 //    flag.store(false);
@@ -95,7 +99,7 @@ int main() {
     }
 
     finish = clock();
-    cout << (double) (finish - start) / CLOCKS_PER_SEC << " " << score_pages;
+    cout << (double) (finish - start) / CLOCKS_PER_SEC << " " << all_pages.size();
 
     return 0;
 }
