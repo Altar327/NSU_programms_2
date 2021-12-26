@@ -20,8 +20,10 @@ mutex mut;
 condition_variable cond_var;
 vector<string> all_pages;
 vector<thread> all_thread;
-//atomic_bool flag = true;
-//atomic_int score_pages = 0;
+atomic_int score_que = 1;
+atomic_bool flag = true;
+atomic_int score_working_threads = 0;
+
 
 void create_new_site(string &address, string &content) {
     ofstream new_page_site;
@@ -31,14 +33,19 @@ void create_new_site(string &address, string &content) {
 }
 
 void new_Thread() {
-    while (!que.empty()) {
+    while (true) {
         unique_lock<mutex> lock(mut, defer_lock);
-        cond_var.wait(lock, []() -> bool { return !que.empty(); });
-
         lock.lock();
+//        cond_var.wait(lock, []() -> bool { return flag.load() == false || !que.empty(); });
+        cond_var.wait(lock, []() -> bool { return flag.load() == false  || score_que.load() != 0; });
+        if (flag.load() == false ) {
+            lock.unlock();
+            break;
+        }
+        score_working_threads++;
         string address = que.front();
         que.pop();
-//        score_pages++;
+        score_que--;
         lock.unlock();
 
         ifstream read("./test_data/" + address + ".html");
@@ -60,12 +67,20 @@ void new_Thread() {
             if (find(all_pages.begin(), all_pages.end(), address_new_pade) == all_pages.end()) {
                 all_pages.push_back(address_new_pade);
                 que.push(address_new_pade);
-//                cond_var.notify_all();
+                score_que++;
             }
             lock.unlock();
             pos1 = content.find("<a href=\"");
         }
-        cond_var.notify_one();
+
+        cond_var.notify_all();
+
+        lock.lock();
+        score_working_threads--;
+        if (flag.load() == false) {
+            break;
+        }
+        lock.unlock();
     }
 };
 
@@ -82,24 +97,36 @@ int main() {
     for (int i = 0; i < count_thread; i++) {
         all_thread.push_back(thread(new_Thread));
     }
-    cond_var.notify_one();
+    cond_var.notify_all();
 
-    while (!que.empty()) {
-        //cond_var.notify_all();
+
+    while (score_working_threads.load() != 0 || score_que.load() != 0) {
+//        cond_var.notify_all();
     }
+//
+//    if (que.empty()) {
+//        cout << "AAAAAAAAAAAAAAAAAAAAAAA" << endl;
+//    }
+//
+//
+//    while (!que.empty()) {
+//        cout << que.front() << endl;
+//        que.pop();
+//    }
 
-//    flag.store(false);
+    mut.lock();
+    flag = false;
+    mut.unlock();
 
-    for (int i = 0; i < all_thread.size(); i++) {
+    for (int i = 0; i < count_thread; i++) {
         cond_var.notify_all();
     }
 
-    for (int i = 0; i < all_thread.size(); i++) {
+    for (int i = 0; i < count_thread; i++) {
         all_thread[i].join();
     }
 
     finish = clock();
     cout << (double) (finish - start) / CLOCKS_PER_SEC << " " << all_pages.size();
-
     return 0;
 }
