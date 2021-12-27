@@ -37,8 +37,8 @@ void new_Thread() {
         unique_lock<mutex> lock(mut, defer_lock);
         lock.lock();
 //        cond_var.wait(lock, []() -> bool { return flag.load() == false || !que.empty(); });
-        cond_var.wait(lock, []() -> bool { return flag.load() == false  || score_que.load() != 0; });
-        if (flag.load() == false ) {
+        cond_var.wait(lock, []() -> bool { return (score_working_threads == 0 && score_que == 0) || score_que != 0; });
+        if (score_working_threads == 0 && score_que == 0) {
             lock.unlock();
             break;
         }
@@ -77,9 +77,6 @@ void new_Thread() {
 
         lock.lock();
         score_working_threads--;
-        if (flag.load() == false) {
-            break;
-        }
         lock.unlock();
     }
 };
@@ -100,23 +97,9 @@ int main() {
     cond_var.notify_all();
 
 
-    while (score_working_threads.load() != 0 || score_que.load() != 0) {
+    while (score_working_threads != 0 || score_que != 0) {
 //        cond_var.notify_all();
     }
-//
-//    if (que.empty()) {
-//        cout << "AAAAAAAAAAAAAAAAAAAAAAA" << endl;
-//    }
-//
-//
-//    while (!que.empty()) {
-//        cout << que.front() << endl;
-//        que.pop();
-//    }
-
-    mut.lock();
-    flag = false;
-    mut.unlock();
 
     for (int i = 0; i < count_thread; i++) {
         cond_var.notify_all();
